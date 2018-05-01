@@ -1,0 +1,11 @@
+;<domain|alias|ip> [ip]
+
+# OK: alias ip
+# facebook 172.17.0.100
+
+; OK: ip
+# 172.17.0.100
+
+; E: can't connect facebook
+; only if it's in /etc/hosts
+# facebook

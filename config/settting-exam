@@ -1,0 +1,45 @@
+# 能用配置
+[server]
+    # 能用登录名
+    username    = test001
+    # 通过密码
+    password    = test001
+
+    # 跳板机, 优先级最低
+    gateway   =
+
+[172.17.0.100]
+    # 换一个用户名，但相同的密码
+    username = test002
+    ; password = test002
+
+[172.17.0.101]
+    ; username = test002
+    # 使用不同的密码
+    password = test002
+
+    # 优先级高于 gateway::pattern 配置
+    # 通过名为 test 的跳板机登录
+    gateway = test
+
+; 跳板机， 可设置多个
+[gateway]
+    # 名称
+    name      = test
+
+    # 地址
+    remote    = 172.17.0.254
+
+    # 工作中
+    ; status  = open
+
+    # 使用默认登录名 test001
+    ; username  =
+
+    # 默认密码
+    ; password  =
+
+    # 优先级高于 server::gateway 配置
+    # face 将匹配 server文件中 *face*
+    pattern = face
+
