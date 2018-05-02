@@ -12,20 +12,45 @@ set CONF_PASSWORD ""
 # gateway category
 set CONF_CATGORY_GATEWAY "gateway"
 # current category
-set Category_Current $CONF_CATGORY_DEFAULT
+set CATEGORY_CURRENT $CONF_CATGORY_DEFAULT
 
 # loaded setting
-array set setting_from_conf []
+array set SETTING_FROM_CONF []
 # gatway index
-set conf_gateway_index 0
+set CONF_GATEWAY_INDEX 0
 
 # loaded server
-array set server_from_conf []
+array set SERVER_FROM_CONF []
 # hit server
-array set server_hits []
+array set SERVER_HITS []
+
+# auto command
+set CONF_AUTO_COMMAND ""
+# interact
+set CONF_INTERACT false
+
+proc Confinit {} {
+  global CONF_USERNAME
+  global CONF_PASSWORD
+  global CONF_CATGORY_DEFAULT
+  global CONF_SETTING
+  global CONF_SERVER
+
+  ConfRead $CONF_SETTING Conf_Settting_Init
+  set CONF_USERNAME [Conf_Get username $CONF_CATGORY_DEFAULT]
+  set CONF_PASSWORD [Conf_Get password $CONF_CATGORY_DEFAULT]
+
+  global env
+  # hidden if username is LOGNAME
+  if {$CONF_USERNAME == $env(LOGNAME)} {
+    set CONF_USERNAME ""
+  }
+
+  ConfRead $CONF_SERVER Conf_Server_Init
+}
 
 # get file body
-proc Conf_Read {filename callback} {
+proc ConfRead {filename callback} {
   if [catch {open $filename "r"} fd] { error -100 }
   while {! [eof $fd]} {
     if {![gets $fd line] || [regexp {^\s*[\#;]} $line]} { continue }
@@ -34,64 +59,124 @@ proc Conf_Read {filename callback} {
   close $fd
 }
 
-# get server_hits
-proc Conf_Hit {domain} {
-  global server_hits
-  global server_from_conf
+# get SERVER_HITS
+proc ConfHit {domain} {
+  global SERVER_HITS
+  global SERVER_FROM_CONF
   set index 1
-  foreach name [array names server_from_conf] {
+  foreach name [array names SERVER_FROM_CONF] {
     if [regexp "$domain" $name match] {
-      set server_hits($index) $name
+      set SERVER_HITS($index) $name
       incr index
     }
   }
 
-  if {[array size server_hits] == 0} {
+  if {[array size SERVER_HITS] == 0} {
     puts " ** DO NOT FOUND SERVER MATCH '$domain'"
     error -200
   }
 }
 
-proc Conf_Print {lists} {
-  upvar $lists server_hits
-  set size [array size server_hits]
+proc ConfPrint {lists} {
+  upvar $lists SERVER_HITS
+  set size [array size SERVER_HITS]
 
   set idx 1
   while {$idx <= $size} {
-    puts "  * \[$idx] - $server_hits($idx)"
+    puts "  * \[$idx] - $SERVER_HITS($idx)"
     incr idx
   }
 }
 
-proc Conf_List {domain} {
-  Conf_Hit $domain
+proc ConfList {domain} {
+  ConfHit $domain
 
-  global server_hits
+  global SERVER_HITS
   puts stderr " @@ MATCHED"
-  Conf_Print server_hits
+  ConfPrint SERVER_HITS
 }
 
-proc Conf_Remote {domain} {
-  global server_hits
-  global server_from_conf
+proc ConfRemote {domain} {
+  global SERVER_HITS
+  global SERVER_FROM_CONF
 
-  Conf_Hit $domain
+  ConfHit $domain
 
-  set size [array size server_hits]
+  set size [array size SERVER_HITS]
   if {$size == 1} {
-    return $server_from_conf($server_hits(1))
+    eval ConfAutoCommand [split $SERVER_HITS($c) "|"]
+    return $SERVER_FROM_CONF($SERVER_HITS(1))
   }
 
   puts stderr " @@ MORE SERVER MATCHED"
-  Conf_Print server_hits
+  ConfPrint SERVER_HITS
 
-  return [Conf_Choose server_hits]
+  return [ConfChoose SERVER_HITS]
 }
 
-proc Conf_Choose {servers} {
-  upvar $servers server_hits
-  set size [array size server_hits]
-  global server_from_conf
+# get auto command
+proc ConfAutoCommand {args} {
+  global CONF_INTERACT
+  global CONF_CATGORY_DEFAULT
+
+  set interact [eval Conf_Gets interact $args $CONF_CATGORY_DEFAULT]
+  if {$interact == "true"} {set CONF_INTERACT true}
+
+  global CONF_AUTO_COMMAND
+  set CONF_AUTO_COMMAND [eval Conf_Gets command $args]
+  if {$CONF_AUTO_COMMAND != ""} {
+    if {$CONF_AUTO_COMMAND == "close" || $CONF_AUTO_COMMAND == "none"} {
+      set CONF_AUTO_COMMAND ""
+    }
+
+    return
+  }
+
+  global SETTING_FROM_CONF
+
+  array set commands [array get SETTING_FROM_CONF *,command]
+  foreach name [array names commands] {
+    regexp "(.*).command" $name match category
+    foreach arg $args {
+      if {[regexp $category $arg]} {
+        set CONF_AUTO_COMMAND $commands($name)
+        set interact [Conf_Get interact $category]
+        if {$interact == "true"} {set CONF_INTERACT true}
+        if {$name != $CONF_CATGORY_DEFAULT} {return }
+      }
+    }
+  }
+}
+
+proc ConfGateway {domain {ip ""}} {
+  global CONF_CATGORY_GATEWAY
+  set gateway [Conf_Gets gateway $domain $ip]
+
+  if {$gateway != ""} {
+    global SETTING_FROM_CONF
+    array set gateways [array get SETTING_FROM_CONF $CONF_CATGORY_GATEWAY,*,name]
+    foreach name [array names gateways] {
+      if {$gateway == $gateways($name)} {
+        regexp "$CONF_CATGORY_GATEWAY,(.*),name" $name match index
+        return [Conf_Gateway_info $index]
+      }
+    }
+  }
+
+  if {$gateway != ""} {
+    set gateway [Conf_Get gateway $CONF_CATGORY_GATEWAY]
+  }
+
+  # search
+  # [gateway]
+  #   pattern = ...
+  return [Conf_Gateway_List $domain $ip]
+}
+
+proc ConfChoose {servers} {
+  upvar $servers SERVER_HITS
+  set size [array size SERVER_HITS]
+  global SERVER_FROM_CONF
 
   set c "x"
   set count 1
@@ -102,7 +187,8 @@ proc Conf_Choose {servers} {
     if {$c == "q"} {
       error -999
     } elseif {$c > 0 && $c <= $size} {
-      return $server_from_conf($server_hits($c))
+      eval ConfAutoCommand [split $SERVER_HITS($c) "|"]
+      return $SERVER_FROM_CONF($SERVER_HITS($c))
     }
 
     puts -nonewline stderr " -- INPUT ID TO SEARCH ONE \[q]: "
@@ -110,41 +196,16 @@ proc Conf_Choose {servers} {
   }
 }
 
-proc Conf_Gateway {domain {ip ""}} {
-    global CONF_CATGORY_GATEWAY
-  set gateway [Conf_Gets gateway $domain $ip]
-
-  if {$gateway != ""} {
-    global setting_from_conf
-    array set gateways [array get setting_from_conf $CONF_CATGORY_GATEWAY,*,name]
-    foreach name [array names gateways] {
-      if {$gateway == $gateways($name)} {
-        regexp "$CONF_CATGORY_GATEWAY,(.*),name" $name match index
-        return [Conf_Gateway_info $index]
-      }
-    }
-  }
-
-  if {$gateway != ""} {
-    set gateway [Conf_Get $CONF_CATGORY_GATEWAY gateway]
-  }
-
-  # search
-  # [gateway]
-  #   pattern = ...
-  return [Conf_Gateway_List $domain $ip]
-}
-
 proc Conf_Gateway_List {args} {
   global CONF_CATGORY_GATEWAY
-  global setting_from_conf
-  array set gateways [array get setting_from_conf $CONF_CATGORY_GATEWAY,*,pattern]
+  global SETTING_FROM_CONF
+  array set gateways [array get SETTING_FROM_CONF $CONF_CATGORY_GATEWAY,*,pattern]
   foreach name [array names gateways] {
     regexp "$CONF_CATGORY_GATEWAY,(.*),pattern" $name match index
-    set status [Conf_Get $CONF_CATGORY_GATEWAY,$index status]
+    set status [Conf_Get status $CONF_CATGORY_GATEWAY,$index]
     if {$status == "close"} { continue }
 
-    set remote [Conf_Get $CONF_CATGORY_GATEWAY,$index remote]
+    set remote [Conf_Get remote $CONF_CATGORY_GATEWAY,$index]
     if {$remote == ""} { continue }
 
     foreach arg $args {
@@ -161,7 +222,7 @@ proc Conf_Gateway_List {args} {
 proc Conf_Gateway_info {index} {
   global CONF_CATGORY_GATEWAY
   global CONF_CATGORY_DEFAULT
-  set remote [Conf_Get $CONF_CATGORY_GATEWAY,$index remote]
+  set remote [Conf_Get remote $CONF_CATGORY_GATEWAY,$index]
   set username [Conf_Gets username $CONF_CATGORY_GATEWAY,$index $CONF_CATGORY_DEFAULT]
   set password [Conf_Gets password $CONF_CATGORY_GATEWAY,$index $CONF_CATGORY_DEFAULT]
 
@@ -176,7 +237,7 @@ proc Conf_Gets {fieldName args} {
   if {$args != ""} {
     foreach arg $args {
       if {$arg != ""} {
-        set val [Conf_Get $arg $fieldName]
+        set val [Conf_Get $fieldName $arg]
         if {$val != ""} {
           return $val
         }
@@ -187,9 +248,9 @@ proc Conf_Gets {fieldName args} {
   return ""
 }
 
-proc Conf_Get {category fieldName} {
-  global setting_from_conf
-  set value [array get setting_from_conf "$category,$fieldName"]
+proc Conf_Get {fieldName category} {
+  global SETTING_FROM_CONF
+  set value [array get SETTING_FROM_CONF "$category,$fieldName"]
 
   if {$value != ""} {
     return [lindex $value 1]
@@ -198,55 +259,35 @@ proc Conf_Get {category fieldName} {
   return ""
 }
 
-proc Conf_init {} {
-  global CONF_USERNAME
-  global CONF_PASSWORD
-  global CONF_CATGORY_DEFAULT
-  global CONF_SETTING
-  global CONF_SERVER
-
-  Conf_Read $CONF_SETTING Conf_Settting_Init
-  set CONF_USERNAME [Conf_Get $CONF_CATGORY_DEFAULT username]
-  set CONF_PASSWORD [Conf_Get $CONF_CATGORY_DEFAULT password]
-
-  global env
-  # hidden if username is LOGNAME
-  if {$CONF_USERNAME == $env(LOGNAME)} {
-    set CONF_USERNAME ""
-  }
-
-  Conf_Read $CONF_SERVER Conf_Server_Init
-}
-
 proc Conf_Settting_Init {line} {
-  global Category_Current
+  global CATEGORY_CURRENT
 
   # get [...]
-  if {[regexp {\[([^\]]*)\]} $line match Category_Current]} {
-    set Category_Current [string trim $Category_Current]
-    if {$Category_Current == ""} {
+  if {[regexp {\[([^\]]*)\]} $line match CATEGORY_CURRENT]} {
+    set CATEGORY_CURRENT [string trim $CATEGORY_CURRENT]
+    if {$CATEGORY_CURRENT == ""} {
       global CONF_CATGORY_DEFAULT
-      set Category_Current $CONF_CATGORY_DEFAULT
+      set CATEGORY_CURRENT $CONF_CATGORY_DEFAULT
     } else {
-      regsub -all " +" $Category_Current "-" Category_Current
+      regsub -all " +" $CATEGORY_CURRENT "-" CATEGORY_CURRENT
     }
   } elseif [regexp {^([^=]+)=?\s*(.*?)\s*$} $line match name value] {
     # name = value
-    global setting_from_conf
+    global SETTING_FROM_CONF
     regsub -all {[ :]+} [string trim $name] "-" name
     global CONF_CATGORY_GATEWAY
-    if {$Category_Current == $CONF_CATGORY_GATEWAY} {
-      global conf_gateway_index
-      set Category_Current $Category_Current,$conf_gateway_index
-      incr conf_gateway_index
+    if {$CATEGORY_CURRENT == $CONF_CATGORY_GATEWAY} {
+      global CONF_GATEWAY_INDEX
+      set CATEGORY_CURRENT $CATEGORY_CURRENT,$CONF_GATEWAY_INDEX
+      incr CONF_GATEWAY_INDEX
     }
 
-    set setting_from_conf($Category_Current,$name) $value
+    set SETTING_FROM_CONF($CATEGORY_CURRENT,$name) $value
   }
 }
 
 proc Conf_Server_Init {line} {
-  global server_from_conf
+  global SERVER_FROM_CONF
   set pat {^\s*(\S+)(?:\s+(\S+|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))*?$}
   if {[regexp $pat $line match alias server]} {
     if {$server == ""} {
@@ -273,6 +314,6 @@ proc Conf_Server_Init {line} {
     }
 
     set info "{$server} {$username} {$password}"
-    set server_from_conf($key) $info
+    set SERVER_FROM_CONF($key) $info
   }
 }

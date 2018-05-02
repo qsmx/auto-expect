@@ -6,7 +6,11 @@
     password  =
 
     # 登录后自动执行
-    ; command = echo 1
+    ; command =
+
+    # 自动执行命令后是否停留在交互环境
+    # 设置为true时停留，默认退出
+    ; interact = false
 
     # 跳板机, 优先级最低
     gateway   =

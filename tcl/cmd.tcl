@@ -1,8 +1,10 @@
+set CMD_AUTO_COMMAND ""
+
 proc Cmd_ssh {svr {cmd ""} args} {
-  set server [Conf_Remote $svr]
+  set server [ConfRemote $svr]
 
   if {$server != "" } {
-    set gateway [Conf_Gateway [lindex $server 0]]
+    set gateway [ConfGateway [lindex $server 0]]
     set ssh_cmd "ssh -tt [lindex $server 1][lindex $server 0]"
     set passwords "[lindex $server 2]"
 
@@ -11,12 +13,22 @@ proc Cmd_ssh {svr {cmd ""} args} {
       set passwords "[lindex $gateway 2] $passwords"
     }
 
-    command_low_spawn $ssh_cmd $passwords
+    global CONF_INTERACT
+    global CONF_AUTO_COMMAND
+    global CMD_AUTO_COMMAND
+
+    if {$CONF_AUTO_COMMAND != "" && !$CONF_INTERACT} {
+      set ssh_cmd "$ssh_cmd $CONF_AUTO_COMMAND"
+    } else {
+      set CMD_AUTO_COMMAND $CONF_AUTO_COMMAND
+    }
+
+    command_spawn "$ssh_cmd" $passwords
   }
 }
 
 proc Cmd_list {svr args} {
-  Conf_List $svr
+  ConfList $svr
 }
 
 proc Cmd_scp {src {dest .} args} {
@@ -32,7 +44,13 @@ proc Cmd_sshfs {src {dest .} args} {
     set _dest $src
   }
 
-  if {$_dest == "."} {set _dest [file tail $_src]}
+  if {$_dest == "."} {
+    set a [split [file tail $_src] ":"]
+    set b "sshfs.$a"
+
+    set _dest [join $b ""]
+  }
+
   if {[file exists $_dest]} {
     if {[file isdirectory $_dest]} {
       error -502
@@ -48,6 +66,7 @@ proc Cmd_sshfs {src {dest .} args} {
   command_exec "sshfs" $_src $_dest
 }
 
+####
 proc command_check_path {src dest} {
   set a [string first ":" $src]
   set b [string first ":" $dest]
@@ -103,7 +122,7 @@ proc command_exec {cmdStr src {dest .} {checkLocal false}} {
     }
   }
 
-  set server [Conf_Remote $svr]
+  set server [ConfRemote $svr]
   if {$server == ""} {return }
 
   if {$tolocal} {
@@ -113,7 +132,7 @@ proc command_exec {cmdStr src {dest .} {checkLocal false}} {
   }
 
   set passwords "[lindex $server 2]"
-  set gateway [Conf_Gateway [lindex $server 0]]
+  set gateway [ConfGateway [lindex $server 0]]
 
   set CmdPrefix ""
   global TryRun
@@ -133,11 +152,6 @@ proc command_exec {cmdStr src {dest .} {checkLocal false}} {
 
 # run spawn
 proc command_spawn {cmd {password ""}} {
-  command_low_spawn $cmd $password
-}
-
-# low spawn
-proc command_low_spawn {cmd {password ""} {command ""}} {
   global TryRun
 
   if {$TryRun} {
@@ -145,17 +159,17 @@ proc command_low_spawn {cmd {password ""} {command ""}} {
     return
   }
 
+  global CMD_AUTO_COMMAND
   eval spawn $cmd
   foreach pwd $password {
     expect {
       "yes/no"        { send "yes\r"; set timeout 1; exp_continue }
       "assword:"      { send "$pwd\r" }
-      "*$*"           { break }
     }
   }
 
-  if {$command != ""} {
-    expect "*\[#$]*" { send "$command\r" }
+  if {$CMD_AUTO_COMMAND != ""} {
+    expect "\[#$]*" { send "$CMD_AUTO_COMMAND\r" }
   }
 
   interact

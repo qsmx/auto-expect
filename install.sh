@@ -90,7 +90,7 @@ proc Error {message} {
     }
 }
 
-if [catch {Conf_init} message] {
+if [catch {Confinit} message] {
     Error $message
 } elseif [catch {Main $argc $ARGVS} message] {
     Error $message
