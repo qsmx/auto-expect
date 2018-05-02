@@ -25,7 +25,7 @@ array set server_from_conf []
 array set server_hits []
 
 # get file body
-proc Conf_read {filename callback} {
+proc Conf_Read {filename callback} {
   if [catch {open $filename "r"} fd] { error -100 }
   while {! [eof $fd]} {
     if {![gets $fd line] || [regexp {^\s*[\#;]} $line]} { continue }
@@ -52,15 +52,10 @@ proc Conf_Hit {domain} {
   }
 }
 
-proc Conf_Search {domain} {
-  Conf_Hit $domain
-
-  global server_hits
-  global server_from_conf
-
+proc Conf_Print {lists} {
+  upvar $lists server_hits
   set size [array size server_hits]
 
-  puts stderr " @@ MATCHED"
   set idx 1
   while {$idx <= $size} {
     puts "  * \[$idx] - $server_hits($idx)"
@@ -68,10 +63,19 @@ proc Conf_Search {domain} {
   }
 }
 
-proc Conf_Remote {domain} {
+proc Conf_List {domain} {
   Conf_Hit $domain
+
+  global server_hits
+  puts stderr " @@ MATCHED"
+  Conf_Print server_hits
+}
+
+proc Conf_Remote {domain} {
   global server_hits
   global server_from_conf
+
+  Conf_Hit $domain
 
   set size [array size server_hits]
   if {$size == 1} {
@@ -79,11 +83,7 @@ proc Conf_Remote {domain} {
   }
 
   puts stderr " @@ MORE SERVER MATCHED"
-  set idx 1
-  while {$idx <= $size} {
-    puts "  * \[$idx] - $server_hits($idx)"
-    incr idx
-  }
+  Conf_Print server_hits
 
   return [Conf_Choose server_hits]
 }
@@ -205,18 +205,24 @@ proc Conf_init {} {
   global CONF_SETTING
   global CONF_SERVER
 
-  Conf_read $CONF_SETTING Conf_Settting_Init
+  Conf_Read $CONF_SETTING Conf_Settting_Init
   set CONF_USERNAME [Conf_Get $CONF_CATGORY_DEFAULT username]
   set CONF_PASSWORD [Conf_Get $CONF_CATGORY_DEFAULT password]
 
-  Conf_read $CONF_SERVER Conf_Server_Init
+  global env
+  # hidden if username is LOGNAME
+  if {$CONF_USERNAME == $env(LOGNAME)} {
+    set CONF_USERNAME ""
+  }
+
+  Conf_Read $CONF_SERVER Conf_Server_Init
 }
 
 proc Conf_Settting_Init {line} {
   global Category_Current
 
   # get [...]
-  if [regexp {\[([^\]]*)\]} $line match Category_Current] {
+  if {[regexp {\[([^\]]*)\]} $line match Category_Current]} {
     set Category_Current [string trim $Category_Current]
     if {$Category_Current == ""} {
       global CONF_CATGORY_DEFAULT
@@ -242,7 +248,7 @@ proc Conf_Settting_Init {line} {
 proc Conf_Server_Init {line} {
   global server_from_conf
   set pat {^\s*(\S+)(?:\s+(\S+|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))*?$}
-  if [regexp $pat $line match alias server] {
+  if {[regexp $pat $line match alias server]} {
     if {$server == ""} {
       set server $alias
       set key "$server"

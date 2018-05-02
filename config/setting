@@ -1,9 +1,12 @@
 # 能用配置
 [server]
     # 登录名
-    username    =
+    username  =
     # 密码
-    password    =
+    password  =
+
+    # 登录后自动执行
+    ; command = echo 1
 
     # 跳板机, 优先级最低
     gateway   =
@@ -30,5 +33,5 @@
 
     # 匹配模式（正则）
     # 用于自动匹配 server文件 中 domain 或 ip
-    pattern =
+    pattern   =
 
