@@ -3,9 +3,9 @@
 help() {
     echo " @_@ INSTALL rd into system."
     echo "   `basename $0` -i <rd> -p </usr/local/bin/> -c <~/.rd.d/>"
-    echo "          -i rd       command name, default rd"
+    echo "          -n rd       command name, default rd"
     echo "                      rd - remote login do ..."
-    echo "          -p /usr/local/bin/"
+    echo "          -i /usr/local/bin/"
     echo "                      install path, require sudo"
     echo "          -c ~/.rd.d/"
     echo "                      config file path"
@@ -14,15 +14,15 @@ help() {
     exit 0
 }
 
-NAME_I=rd
-PATH_P=/usr/local/bin
+NAME_N=rd
+PATH_I=/usr/local/bin
 PATH_C=
 
 until [[ $# == 0 ]]
 do
     case "$1" in
-        -i) NAME_I=$2; shift;;
-        -p) PATH_P=$2; shift;;
+        -i) NAME_N=$2; shift;;
+        -p) PATH_I=$2; shift;;
         -c) PATH_C=$2; shift;;
         -h|--help) help;;
     esac
@@ -37,30 +37,30 @@ read -t 5 -n 1 r
 
 [[ $r == "q" || $r == "Q" ]] && { echo; exit 0; }
 
-[[ -z $PATH_C ]] && PATH_C=$HOME/.$NAME_I.d
+[[ -z $PATH_C ]] && PATH_C=$HOME/.$NAME_N.d
 
-# echo $NAME_I, $PATH_P, $PATH_C
+# echo $NAME_N, $PATH_I, $PATH_C
 
 mkdir -p $PATH_C
 [[ ! -f $PATH_C/server ]] && cp config/server $PATH_C
 [[ ! -f $PATH_C/setting ]] && cp config/setting* $PATH_C
 
-: > $NAME_I
-chmod +x $NAME_I
+: > $NAME_N
+chmod +x $NAME_N
 
-cat > $NAME_I <<<'#!/usr/bin/env expect
+cat > $NAME_N <<<'#!/usr/bin/env expect
 
 set RC_PATH '"$PATH_C"'
 '
 
-cat tcl/cmd.tcl >> $NAME_I
-echo >> $NAME_I
-cat tcl/help.tcl >> $NAME_I
-echo >> $NAME_I
-cat tcl/conf.tcl >> $NAME_I
-echo >> $NAME_I
+cat tcl/cmd.tcl >> $NAME_N
+echo >> $NAME_N
+cat tcl/help.tcl >> $NAME_N
+echo >> $NAME_N
+cat tcl/conf.tcl >> $NAME_N
+echo >> $NAME_N
 
-cat >> $NAME_I <<<'
+cat >> $NAME_N <<<'
 proc Main {argc argv} {
     global server_from_conf
     if {$argc == 0} { usage }
@@ -99,5 +99,5 @@ if [catch {Confinit} message] {
 
 [[ $UID != 0 ]] && SUDO=sudo
 
-$SUDO mv $NAME_I $PATH_P
+$SUDO mv $NAME_N $PATH_I
 
