@@ -8,8 +8,10 @@ proc usage {} {
     global argv0
     puts stderr "Usage: [file tail $argv0] \[options] \[subcmd] svr"
     puts stderr "  subcmd:"
-    puts stderr "    ssh <svr>      auto ssh login to domain"
-    puts stderr "                   default, ignore ssh"
+    puts stderr "    ssh <svr> \[cmd]"
+    puts stderr "                   auto ssh login to domain"
+    puts stderr "                   run cmd and exit if exists cmd"
+    puts stderr "                   use \'\' if cmd has \'|\'"
     puts stderr ""
     puts stderr "    list <svr>     show servers"
     puts stderr ""

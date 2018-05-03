@@ -29,7 +29,7 @@ set CONF_AUTO_COMMAND ""
 # interact
 set CONF_INTERACT false
 
-proc Confinit {} {
+proc ConfInit {} {
   global CONF_USERNAME
   global CONF_PASSWORD
   global CONF_CATGORY_DEFAULT
@@ -72,7 +72,7 @@ proc ConfHit {domain} {
   }
 
   if {[array size SERVER_HITS] == 0} {
-    puts " ** DO NOT FOUND SERVER MATCH '$domain'"
+    puts stderr " ** DO NOT FOUND SERVER MATCH '$domain'"
     error -200
   }
 }
@@ -83,9 +83,11 @@ proc ConfPrint {lists} {
 
   set idx 1
   while {$idx <= $size} {
-    puts "  * \[$idx] - $SERVER_HITS($idx)"
+    puts stderr "  * \[$idx] - $SERVER_HITS($idx)"
     incr idx
   }
+
+  flush stderr
 }
 
 proc ConfList {domain} {
@@ -104,7 +106,7 @@ proc ConfRemote {domain} {
 
   set size [array size SERVER_HITS]
   if {$size == 1} {
-    eval ConfAutoCommand [split $SERVER_HITS($c) "|"]
+    eval ConfAutoCommand [split $SERVER_HITS(1) "|"]
     return $SERVER_FROM_CONF($SERVER_HITS(1))
   }
 

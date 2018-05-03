@@ -1,6 +1,11 @@
 set CMD_AUTO_COMMAND ""
 
-proc Cmd_ssh {svr {cmd ""} args} {
+proc Cmd_ssh {args} {
+  if {$args == ""} { error -601 }
+
+  set svr [lindex $args 0]
+  set cmd [lreplace $args 0 0]
+
   set server [ConfRemote $svr]
 
   if {$server != "" } {
@@ -13,29 +18,45 @@ proc Cmd_ssh {svr {cmd ""} args} {
       set passwords "[lindex $gateway 2] $passwords"
     }
 
-    global CONF_INTERACT
-    global CONF_AUTO_COMMAND
-    global CMD_AUTO_COMMAND
+    if {$cmd == ""} {
+      global CONF_INTERACT
+      global CONF_AUTO_COMMAND
+      global CMD_AUTO_COMMAND
 
-    if {$CONF_AUTO_COMMAND != "" && !$CONF_INTERACT} {
-      set ssh_cmd "$ssh_cmd $CONF_AUTO_COMMAND"
+      if {$CONF_AUTO_COMMAND != "" && !$CONF_INTERACT} {
+        set ssh_cmd "$ssh_cmd $CONF_AUTO_COMMAND"
+      } else {
+        set CMD_AUTO_COMMAND $CONF_AUTO_COMMAND
+      }
     } else {
-      set CMD_AUTO_COMMAND $CONF_AUTO_COMMAND
+      set ssh_cmd "$ssh_cmd $cmd"
     }
 
     command_spawn "$ssh_cmd" $passwords
   }
 }
 
-proc Cmd_list {svr args} {
-  ConfList $svr
+proc Cmd_list {args} {
+  if {$args == ""} { error -602 }
+
+  ConfList [lindex $args 0]
 }
 
-proc Cmd_scp {src {dest .} args} {
+proc Cmd_scp {args} {
+  if {$args == "" } { error -603 }
+
+  lassign $args src dest
+  if {$dest == ""} { set dest . }
+
   command_exec "scp -r" $src $dest
 }
 
-proc Cmd_sshfs {src {dest .} args} {
+proc Cmd_sshfs {args} {
+  if {$args == "" } { error -604 }
+
+  lassign $args src dest
+  if {$dest == ""} { set dest . }
+
   if [command_check_path $src $dest] {
     set _src $src
     set _dest $dest

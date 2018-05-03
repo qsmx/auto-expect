@@ -90,12 +90,21 @@ proc Error {message} {
         -501    { puts "多':'冲突"}
         -502    { puts "无法sshfs远程目录到本地文件"}
         -503    { puts "无法创建sshfs本地目录"}
+
+        -601    { puts " *** ssh <svr> \[cmd]" }
+        -602    { puts " *** list <svr>" }
+        -603    {
+            puts " *** scp <svr>:\[path] \[dest]"
+            puts " *** scp src <svr>\[:path]"
+        }
+        -604    { puts " *** sshfs <svr> [dest]" }
+
         -999    {}
         default { puts "error, $message" }
     }
 }
 
-if [catch {Confinit} message] {
+if [catch {ConfInit} message] {
     Error $message
 } elseif [catch {Main $argc $ARGVS} message] {
     Error $message
