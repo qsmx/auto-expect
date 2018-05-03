@@ -2,7 +2,7 @@
 
 help() {
     echo " @_@ INSTALL rd into system."
-    echo "   `basename $0` -i <rd> -p </usr/local/bin/> -c <~/.rd.d/>"
+    echo "   `basename $0` -i rd -p /usr/local/bin/ -c ~/.rd.d/"
     echo "          -n rd       command name, default rd"
     echo "                      rd - remote login do ..."
     echo "          -i /usr/local/bin/"
@@ -41,11 +41,16 @@ read -t 5 -n 1 r
 
 # echo $NAME_N, $PATH_I, $PATH_C
 
-mkdir -p $PATH_C
+mkdir -p $PATH_C || {
+    PATH_C=$HOME/.$NAME_N.d
+    mkdir -p $PATH_C
+}
+DIR_PATH=`dirname $0`
+
 [[ ! -f $PATH_C/server ]] && cp config/server $PATH_C
 [[ ! -f $PATH_C/setting ]] && cp config/setting* $PATH_C
 
-: > $NAME_N
+touch $NAME_N &>/dev/null || { NAME_N=/tmp/$NAME_N; :>$NAME_N; }
 chmod +x $NAME_N
 
 cat > $NAME_N <<<'#!/usr/bin/env expect
@@ -53,11 +58,11 @@ cat > $NAME_N <<<'#!/usr/bin/env expect
 set RC_PATH '"$PATH_C"'
 '
 
-cat tcl/cmd.tcl >> $NAME_N
+cat $DIR_PATH/tcl/cmd.tcl >> $NAME_N
 echo >> $NAME_N
-cat tcl/help.tcl >> $NAME_N
+cat $DIR_PATH/tcl/help.tcl >> $NAME_N
 echo >> $NAME_N
-cat tcl/conf.tcl >> $NAME_N
+cat $DIR_PATH/tcl/conf.tcl >> $NAME_N
 echo >> $NAME_N
 
 cat >> $NAME_N <<<'
