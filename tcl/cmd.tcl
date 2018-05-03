@@ -9,7 +9,8 @@ proc Cmd_ssh {args} {
   set server [ConfRemote $svr]
 
   if {$server != "" } {
-    set gateway [ConfGateway [lindex $server 0]]
+    set gateway [ConfGateway $server]
+    puts $gateway
     set ssh_cmd "ssh -tt [lindex $server 1][lindex $server 0]"
     set passwords "[lindex $server 2]"
 
@@ -160,7 +161,7 @@ proc command_exec {cmdStr src {dest .} {checkLocal false}} {
   }
 
   set passwords "[lindex $server 2]"
-  set gateway [ConfGateway [lindex $server 0]]
+  set gateway [ConfGateway $server]
 
   set CmdPrefix ""
   global TryRun

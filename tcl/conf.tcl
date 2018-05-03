@@ -150,8 +150,9 @@ proc ConfAutoCommand {args} {
   }
 }
 
-proc ConfGateway {domain {ip ""}} {
+proc ConfGateway {server} {
   global CONF_CATGORY_GATEWAY
+  lassign $server ip null null domain
   set gateway [Conf_Gets gateway $domain $ip]
 
   if {$gateway != ""} {
@@ -315,7 +316,7 @@ proc Conf_Server_Init {line} {
       set password $CONF_PASSWORD
     }
 
-    set info "{$server} {$username} {$password}"
+    set info "{$server} {$username} {$password} {$alias}"
     set SERVER_FROM_CONF($key) $info
   }
 }
