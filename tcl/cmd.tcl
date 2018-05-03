@@ -1,5 +1,3 @@
-set CMD_AUTO_COMMAND ""
-
 proc Cmd_ssh {args} {
   if {$args == ""} { error -601 }
 
@@ -19,21 +17,20 @@ proc Cmd_ssh {args} {
       set passwords "[lindex $gateway 2] $passwords"
     }
 
+    set command ""
     if {$cmd == ""} {
       global CONF_INTERACT
-      global CONF_AUTO_COMMAND
-      global CMD_AUTO_COMMAND
 
-      if {$CONF_AUTO_COMMAND != "" && !$CONF_INTERACT} {
-        set ssh_cmd "$ssh_cmd $CONF_AUTO_COMMAND"
-      } else {
-        set CMD_AUTO_COMMAND $CONF_AUTO_COMMAND
+      set command [eval ConfAutoCommand [lindex $server 3] [lindex $server 0]]
+      if {$command != "" && !$CONF_INTERACT} {
+        set ssh_cmd "$ssh_cmd $command"
+        set command ""
       }
     } else {
       set ssh_cmd "$ssh_cmd $cmd"
     }
 
-    command_spawn "$ssh_cmd" $passwords
+    command_spawn "$ssh_cmd" $passwords $command
   }
 }
 
@@ -180,7 +177,7 @@ proc command_exec {cmdStr src {dest .} {checkLocal false}} {
 }
 
 # run spawn
-proc command_spawn {cmd {password ""}} {
+proc command_spawn {cmd {password ""} {command ""}} {
   global TryRun
 
   if {$TryRun} {
@@ -188,7 +185,6 @@ proc command_spawn {cmd {password ""}} {
     return
   }
 
-  global CMD_AUTO_COMMAND
   eval spawn $cmd
   foreach pwd $password {
     expect {
@@ -197,8 +193,8 @@ proc command_spawn {cmd {password ""}} {
     }
   }
 
-  if {$CMD_AUTO_COMMAND != ""} {
-    expect "\[#$]*" { send "$CMD_AUTO_COMMAND\r" }
+  if {$command != ""} {
+    expect "\[#$]*" { send "$command\r" }
   }
 
   interact

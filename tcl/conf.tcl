@@ -24,8 +24,6 @@ array set SERVER_FROM_CONF []
 # hit server
 array set SERVER_HITS []
 
-# auto command
-set CONF_AUTO_COMMAND ""
 # interact
 set CONF_INTERACT false
 
@@ -106,7 +104,6 @@ proc ConfRemote {domain} {
 
   set size [array size SERVER_HITS]
   if {$size == 1} {
-    eval ConfAutoCommand [split $SERVER_HITS(1) "|"]
     return $SERVER_FROM_CONF($SERVER_HITS(1))
   }
 
@@ -124,30 +121,25 @@ proc ConfAutoCommand {args} {
   set interact [eval Conf_Gets interact $args $CONF_CATGORY_DEFAULT]
   if {$interact == "true"} {set CONF_INTERACT true}
 
-  global CONF_AUTO_COMMAND
-  set CONF_AUTO_COMMAND [eval Conf_Gets command $args]
-  if {$CONF_AUTO_COMMAND != ""} {
-    if {$CONF_AUTO_COMMAND == "close" || $CONF_AUTO_COMMAND == "none"} {
-      set CONF_AUTO_COMMAND ""
-    }
-
-    return
-  }
+  set command [eval Conf_Gets command $args]
+  if {$command != ""} {return $command }
 
   global SETTING_FROM_CONF
+  set command_default ""
 
   array set commands [array get SETTING_FROM_CONF *,command]
   foreach name [array names commands] {
     regexp "(.*).command" $name match category
     foreach arg $args {
       if {[regexp $category $arg]} {
-        set CONF_AUTO_COMMAND $commands($name)
         set interact [Conf_Get interact $category]
         if {$interact == "true"} {set CONF_INTERACT true}
-        if {$name != $CONF_CATGORY_DEFAULT} {return }
+        return $commands($name)
       }
     }
   }
+
+  return [eval Conf_Get command $CONF_CATGORY_DEFAULT]
 }
 
 proc ConfGateway {server} {
@@ -190,7 +182,6 @@ proc ConfChoose {servers} {
     if {$c == "q"} {
       error -999
     } elseif {$c > 0 && $c <= $size} {
-      eval ConfAutoCommand [split $SERVER_HITS($c) "|"]
       return $SERVER_FROM_CONF($SERVER_HITS($c))
     }
 
