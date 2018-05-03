@@ -169,7 +169,7 @@ $ rd scp face:
 #           ":": 可省略
 #     /.../path: 远程路径或文件，可选
 #                不存在时则拷贝到用户登录
-$ rd scp src <svr[:/.../path]>
+$ rd scp src <svr[:[/.../path]]>
 ```
 
 ### 查询匹配的远程主机
@@ -196,7 +196,7 @@ $ rd list face
 $ rd sshfs <svr:[/.../path]> [dest]
 
 # 映射远程用户目录至本地
-# 丢失 [dest] 参数，
+# 缺省 [dest] 参数，本地目录为 sshfs.???
 $ rd sshfs face:
 
 # 映射 face 登录用户下 auto-expect/ 至本地 rd/
