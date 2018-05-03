@@ -1,0 +1,44 @@
+# 通用配置
+[server]
+    # 登录名
+    username  =
+    # 密码
+    password  =
+
+    # 登录后自动执行
+    ; command =
+
+    # 自动执行命令后是否停留在交互环境
+    # 设置为true时停留，默认退出
+    ; interact = false
+
+    # 跳板机, 优先级最低
+    gateway   =
+
+; 跳板机， 可设置多个
+[gateway]
+    # 名称， 用于 server::gateway 查找
+    name      =
+
+    # 地址
+    remote    =
+
+    # 状态，默认开
+    # 设置为 close 时停止工作
+    ; status  = open
+
+    # 登录名
+    # 如果为空，默认使用 server::username
+    username  =
+
+    # 密码
+    # 如果为空，默认使用 server::password
+    password  =
+
+    # 匹配模式（正则）
+    # 用于自动匹配 server文件 中 domain 或 ip
+    pattern   =
+
+;[gateway]
+; ...
+
