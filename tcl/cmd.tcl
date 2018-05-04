@@ -187,6 +187,7 @@ proc command_spawn {cmd {password ""} {command ""}} {
     expect {
       "yes/no"        { send "yes\r"; set timeout 1; exp_continue }
       "assword:"      { send "$pwd\r" }
+      "*$*"           { break }
     }
   }
 
