@@ -8,7 +8,6 @@ proc Cmd_ssh {args} {
 
   if {$server != "" } {
     set gateway [ConfGateway $server]
-    puts $gateway
     set ssh_cmd "ssh -tt [lindex $server 1][lindex $server 0]"
     set passwords "[lindex $server 2]"
 
@@ -74,8 +73,6 @@ proc Cmd_sshfs {args} {
 
     set _dest [join $b ""]
   }
-
-  puts "$src $dest, $_src, $_dest"
 
   if {[file exists $_dest]} {
     if {![file isdirectory $_dest]} {
