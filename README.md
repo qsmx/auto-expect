@@ -3,17 +3,16 @@
 ## 安装
 
 ```
-  install.sh -n <rd> -p </usr/local/bin/> -c <~/.rd.d/>
-          -n rd       命令名，默认为 rd
+install.sh -n <rd> -p </usr/local/bin/> -c <~/.rd.d/>
+        -n rd       命令名，默认为 rd
 
-          -i /usr/local/bin/
-                      安装路径
+        -i /usr/local/bin/
+                    安装路径
 
-          -c ~/.rd.d/
-                      配置文件路径，默认为 ~/.<rd>.d/
+        -y          直接安装，不出现交互提示
 ```
 
-## 远程主机配置(.../server)
+## 远程主机配置(/etc/<rd>.d/server, $HOME/.<rd>.d/server)
 
 ```
 # 第一列可以为域名，别名，或者IP地址，如果设置了第二列，则必须为IP
@@ -22,7 +21,7 @@
 ;<domain|alias|ip> [ip]
 ```
 
-## 配置(.../setting)
+## 配置(/etc/<rd>.d/setting, $HOME/.<rd>.d/setting)
 
 
 ### 通用配置
@@ -99,6 +98,15 @@
 ```
 
 ## 执行
+
+### 参数
+
+```
+-t              仅打印执行的命令
+
+$ rd -t ssh svr
+TryRun: ssh -tt svr
+```
 
 ### ssh
 

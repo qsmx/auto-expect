@@ -33,8 +33,22 @@ proc ConfInit {} {
   global CONF_CATGORY_DEFAULT
   global CONF_SETTING
   global CONF_SERVER
+  global ETC_PATH
 
-  ConfRead $CONF_SETTING Conf_Settting_Init
+  if {$ETC_PATH != ""} {
+    if {[file exists $ETC_PATH/setting]} {
+      ConfRead $ETC_PATH/setting Conf_Settting_Init
+    }
+
+    if {[file exists $ETC_PATH/server]} {
+      ConfRead $ETC_PATH/server  Conf_Server_Init
+    }
+  }
+
+  if {[file exists $CONF_SETTING]} {
+    ConfRead $CONF_SETTING Conf_Settting_Init
+  }
+
   set CONF_USERNAME [Conf_Get username $CONF_CATGORY_DEFAULT]
   set CONF_PASSWORD [Conf_Get password $CONF_CATGORY_DEFAULT]
 
@@ -44,7 +58,9 @@ proc ConfInit {} {
     set CONF_USERNAME ""
   }
 
-  ConfRead $CONF_SERVER Conf_Server_Init
+  if {[file exists $CONF_SERVER]} {
+    ConfRead $CONF_SERVER Conf_Server_Init
+  }
 }
 
 # get file body
