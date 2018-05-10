@@ -52,11 +52,11 @@ proc ConfInit {} {
   set CONF_USERNAME [Conf_Get username $CONF_CATGORY_DEFAULT]
   set CONF_PASSWORD [Conf_Get password $CONF_CATGORY_DEFAULT]
 
-  global env
-  # hidden if username is LOGNAME
-  if {$CONF_USERNAME == $env(LOGNAME)} {
-    set CONF_USERNAME ""
-  }
+  # global env
+  # # hidden if username is LOGNAME
+  # if {$CONF_USERNAME == $env(LOGNAME)} {
+  #   set CONF_USERNAME ""
+  # }
 
   if {[file exists $CONF_SERVER]} {
     ConfRead $CONF_SERVER Conf_Server_Init
@@ -312,9 +312,9 @@ proc Conf_Server_Init {line} {
     if {$username == ""} {
       global CONF_USERNAME
       set username $CONF_USERNAME
-      if {$username != ""} {
-        set username "$username@"
-      }
+    }
+    if {$username != ""} {
+      set username "$username@"
     }
 
     set password [Conf_Gets password $alias $server]
