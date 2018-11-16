@@ -299,9 +299,9 @@ proc Conf_Settting_Init {line} {
 proc Conf_Server_Init {line} {
   global SERVER_FROM_CONF
   set pat {^\s*(\S+)(?:\s+(\S+|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))*?$}
-  if {[regexp $pat $line match alias server]} {
-    if {$server == ""} {
-      set server $alias
+  if {[regexp $pat $line match server alias]} {
+    if {$alias == ""} {
+      set alias server
       set key "$server"
       set alias ""
     } else {

@@ -1,7 +1,7 @@
-;<domain|alias|ip> [ip]
+;<domain|ip> [alias|...]
 
-# OK: alias ip
-# facebook 172.17.0.100
+# OK: ip alias
+# 172.17.0.100 facebook
 
 ; OK: ip
 # 172.17.0.100

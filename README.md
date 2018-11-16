@@ -15,10 +15,12 @@ install.sh -n <rd> -p </usr/local/bin/> -c <~/.rd.d/>
 ## 远程主机配置(/etc/<rd>.d/server, $HOME/.<rd>.d/server)
 
 ```
-# 第一列可以为域名，别名，或者IP地址，如果设置了第二列，则必须为IP
-# 连接主机时，以第二列IP为优先
+# 第一列可以为域名或者IP地址，如果设置了第二列，可以是别名
+# 连接主机时，只会连接第一列
 # 同一IP可配置多个别名（多行），灵活应用
-;<domain|alias|ip> [ip]
+;[ip] <domain|alias|ip>
+127.0.0.1 self
+127.0.0.1 hi
 ```
 
 ## 配置(/etc/<rd>.d/setting, $HOME/.<rd>.d/setting)
